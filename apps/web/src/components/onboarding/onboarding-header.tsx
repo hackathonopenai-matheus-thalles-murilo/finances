@@ -2,8 +2,9 @@ import { api } from "@my-better-t-app/backend/convex/_generated/api";
 import { Button } from "@my-better-t-app/ui/components/button";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
-import { ReceiptText } from "lucide-react";
 import { useTransition } from "react";
+
+import { BrandMark } from "@/components/brand-mark";
 
 export type OnboardingStep = 1 | 2 | 3;
 
@@ -32,12 +33,7 @@ export function OnboardingHeader({ step }: OnboardingHeaderProps) {
 
   return (
     <header className="grid h-16 grid-cols-[1fr_360px_1fr] items-center border-b bg-card px-8">
-      <div className="flex items-center gap-2.5 text-[15px] font-semibold">
-        <span className="grid size-6.5 place-items-center rounded-md bg-foreground text-background">
-          <ReceiptText className="size-4" />
-        </span>
-        Finora
-      </div>
+      <BrandMark />
       <div className="flex flex-col items-center gap-1.5">
         <span className="text-xs font-medium text-muted-foreground">
           Passo {step} de 3 · {stepLabel[step]}
