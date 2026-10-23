@@ -1,6 +1,7 @@
 import { UserButton } from "@clerk/react";
 import {
   Building2,
+  ChartNoAxesCombined,
   CalendarCheck,
   FileText,
   Landmark,
@@ -22,6 +23,7 @@ export function AppSidebar() {
         Finances
       </div>
       <NavLink to="/dashboard" icon={LayoutDashboard} label="Visão geral" />
+      <NavLink to="/cashflow" icon={ChartNoAxesCombined} label="Painel de caixa (demo)" />
       <NavLink to="/obligations" icon={CalendarCheck} label="Obrigações" />
       <NavLink to="/tax-agents" icon={Sparkles} label="Agentes fiscais" />
       <NavLink to="/documents" icon={FileText} label="Documentos" />

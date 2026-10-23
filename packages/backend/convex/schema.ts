@@ -111,6 +111,35 @@ export default defineSchema({
     .index("by_account_syncedAt", ["accountId", "syncedAt"])
     .index("by_externalId", ["externalId"]),
 
+  cashflowTransactions: defineTable({
+    userId: v.string(),
+    description: v.string(),
+    amountCentavos: v.number(),
+    type: v.union(v.literal("in"), v.literal("out")),
+    date: v.string(),
+    originalDate: v.optional(v.string()),
+    editable: v.boolean(),
+  }).index("by_user_date", ["userId", "date"]),
+
+  pendingCashflowChanges: defineTable({
+    userId: v.string(),
+    phone: v.string(),
+    transactionId: v.id("cashflowTransactions"),
+    description: v.string(),
+    oldDate: v.string(),
+    newDate: v.string(),
+    status: v.literal("awaiting_confirmation"),
+  })
+    .index("by_user_status", ["userId", "status"])
+    .index("by_user_phone", ["userId", "phone"]),
+
+  cashflowWhatsAppLinks: defineTable({
+    phone: v.string(),
+    userId: v.string(),
+  })
+    .index("by_phone", ["phone"])
+    .index("by_user", ["userId"]),
+
   obligations: defineTable({
     userId: v.string(),
     kind: obligationKind,
