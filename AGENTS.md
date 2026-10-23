@@ -32,6 +32,13 @@ Measure twice, cut once, and YAGNI. Build the smallest version that makes the co
 
 Treat the rest of this file as good defaults, not hard rules. If something here fights the task in front of you, say it loudly and get a sign-off before breaking it.
 
+## Hackathon
+
+We are building this in a hackathon, so the focus is getting the thing done fast.
+
+- Spawn subagents freely to speed things up. Run independent work in parallel: research, separate files, checks.
+- Going fast never relaxes "What we never compromise on" or "The three ways to hurt yourself".
+
 ## A small glossary
 
 Use these words consistently.
