@@ -1,6 +1,6 @@
 # Evolution API agent notes
 
-Apply these rules when changing the Evolution API deployment or integrating it with Finances.
+Apply these rules when changing the Evolution API deployment or integrating it with Finora.
 
 - Keep `AUTHENTICATION_API_KEY`, per-instance API keys, WhatsApp QR codes, pairing codes, and session files secret. Never put them in browser code, Git, fixtures, screenshots, prompts, or logs.
 - Call the Evolution API from trusted backend code only. Store its global key in the backend's secret environment, and expose narrow backend operations to the web dashboard and WhatsApp channel. Do not return the global key to clients.

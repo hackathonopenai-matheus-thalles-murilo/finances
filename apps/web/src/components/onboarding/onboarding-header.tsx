@@ -36,7 +36,7 @@ export function OnboardingHeader({ step }: OnboardingHeaderProps) {
         <span className="grid size-6.5 place-items-center rounded-md bg-foreground text-background">
           <ReceiptText className="size-4" />
         </span>
-        Finances
+        Finora
       </div>
       <div className="flex flex-col items-center gap-1.5">
         <span className="text-xs font-medium text-muted-foreground">

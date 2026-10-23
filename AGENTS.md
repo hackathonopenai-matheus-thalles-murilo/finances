@@ -1,6 +1,6 @@
-# Finances
+# Finora
 
-Finances is a tax dashboard for Brazilians. Users connect their bank and brokerage accounts through Open Finance Brasil, and we turn that data into the tax reports, guides and declarations Brazilian law requires. On top of the reports, users can start **tax agents** that do the work end to end: generate the documents, pay the taxes, and submit filings to the government portals.
+Finora is a tax dashboard for Brazilians. Users connect their bank and brokerage accounts through Open Finance Brasil, and we turn that data into the tax reports, guides and declarations Brazilian law requires. On top of the reports, users can start **tax agents** that do the work end to end: generate the documents, pay the taxes, and submit filings to the government portals.
 
 There are two ways in: the **web dashboard** and **WhatsApp**. On WhatsApp the user signs in with the same bank connections and tells us about themselves in plain language: "I get paid in dollars by a US company", "I have an MEI", "I sold some stock in March". We turn that into their fiscal profile, and ask whether they want to onboard their companies too.
 
@@ -45,7 +45,7 @@ We are building this in a hackathon, so the focus is getting the thing done fast
 Use these words consistently.
 
 - **you** means the coding agent reading this file and changing the codebase.
-- **we, us** mean Thalles and the people building Finances.
+- **we, us** mean Thalles and the people building Finora.
 - **user** means the person whose taxes we handle: a taxpayer (CPF) and possibly the companies (CNPJ) they own.
 - **tax agent** means the product's agents that run tax work for a user. Never call them just "agent" in code or copy; that word is for you.
 - **run** means one execution of a tax agent, from trigger to approval to receipt.
