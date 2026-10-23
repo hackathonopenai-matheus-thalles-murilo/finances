@@ -19,6 +19,7 @@ import {
   getOwnedObligation,
   guideFields,
   obligationFields,
+  obligationIdFrom,
 } from "./lib/obligation";
 import { payGuide } from "./lib/payment";
 import { issueGuide } from "./lib/receita";
@@ -92,9 +93,10 @@ export const prepare = mutation({
 });
 
 export const prepareFor = internalMutation({
-  args: { userId: v.string(), obligationId: v.id("obligations") },
+  args: { userId: v.string(), obligationId: v.string() },
   returns: prepareResult,
-  handler: async (ctx, { userId, obligationId }) => prepareGuide(ctx, userId, obligationId),
+  handler: async (ctx, { userId, obligationId }) =>
+    prepareGuide(ctx, userId, obligationIdFrom(ctx, obligationId)),
 });
 
 export const issue = internalAction({

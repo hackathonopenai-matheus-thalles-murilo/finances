@@ -11,6 +11,7 @@ import {
   getOwnedObligation,
   guideFields,
   obligationFields,
+  obligationIdFrom,
 } from "./lib/obligation";
 import { calculate } from "./lib/rules/calculate";
 import { calculation } from "./lib/rules/calculation";
@@ -104,9 +105,10 @@ export const get = query({
 });
 
 export const getFor = internalQuery({
-  args: { userId: v.string(), obligationId: v.id("obligations") },
+  args: { userId: v.string(), obligationId: v.string() },
   returns: obligationDetail,
-  handler: async (ctx, { userId, obligationId }) => detailOf(ctx, userId, obligationId),
+  handler: async (ctx, { userId, obligationId }) =>
+    detailOf(ctx, userId, obligationIdFrom(ctx, obligationId)),
 });
 
 export const generateProofUploadUrl = mutation({

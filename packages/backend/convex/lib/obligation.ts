@@ -13,6 +13,14 @@ export async function getOwnedObligation(
   return obligation;
 }
 
+export function obligationIdFrom(ctx: QueryCtx, obligationId: string) {
+  const id = ctx.db.normalizeId("obligations", obligationId);
+  if (id === null) {
+    throw new Error(`Obligation ${obligationId} not found`);
+  }
+  return id;
+}
+
 export async function getOwnedGuide(ctx: QueryCtx, userId: string, guideId: Id<"guides">) {
   const guide = await ctx.db.get(guideId);
   if (guide === null || guide.userId !== userId) {

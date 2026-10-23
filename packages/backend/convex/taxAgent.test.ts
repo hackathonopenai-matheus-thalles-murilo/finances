@@ -1,15 +1,24 @@
 import agentTest from "@convex-dev/agent/test";
 import { convexTest } from "convex-test";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
 import { api } from "./_generated/api";
 import schema from "./schema";
 import { modules } from "./test.setup";
 
+const ANSWER = "Não encontrei obrigações suas no ano-calendário 2026.";
+
+vi.mock("./lib/taxAgentModel", async () => {
+  const { mockModel } = await import("@convex-dev/agent");
+  const answering = () => mockModel({ content: [{ type: "text", text: ANSWER }] });
+  return { openRouterModel: answering, taxAgentModelFor: async () => answering() };
+});
+
 function setup() {
   const t = convexTest(schema, modules);
   agentTest.register(t);
   return {
+    t,
     ana: t.withIdentity({ tokenIdentifier: "synthetic|user-ana" }),
     bruno: t.withIdentity({ tokenIdentifier: "synthetic|user-bruno" }),
   };
@@ -65,5 +74,27 @@ describe("tax agent thread", () => {
         streamArgs: undefined,
       }),
     ).rejects.toThrow("not found");
+  });
+});
+
+describe("tax agent reply", () => {
+  test("a question gets an answer in the user's thread", async () => {
+    const { ana } = setup();
+
+    await ana.mutation(api.taxAgent.send, { text: "Quais obrigações eu tenho?" });
+    const threadId = await ana.query(api.taxAgent.thread, {});
+    if (threadId === null) throw new Error("Expected a thread");
+
+    await vi.waitFor(async () => {
+      const messages = await ana.query(api.taxAgent.messages, {
+        threadId,
+        paginationOpts: { numItems: 10, cursor: null },
+        streamArgs: undefined,
+      });
+      expect(messages.page.map(({ role, text }) => ({ role, text }))).toContainEqual({
+        role: "assistant",
+        text: ANSWER,
+      });
+    });
   });
 });

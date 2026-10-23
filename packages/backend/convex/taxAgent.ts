@@ -16,14 +16,13 @@ import { z } from "zod";
 
 import { components, internal } from "./_generated/api";
 import { internalAction, mutation, query, type QueryCtx } from "./_generated/server";
-import type { Id } from "./_generated/dataModel";
 import type { ObligationDetail, ObligationRow } from "./obligations";
 import type { Situation } from "./profile";
 import { requireUserId } from "./lib/identity";
 import { openRouterModel, taxAgentModelFor } from "./lib/taxAgentModel";
 
 const obligationIdSchema = z
-  .custom<Id<"obligations">>((value) => typeof value === "string")
+  .string()
   .describe("O obligationId que veio da ferramenta obligations.");
 
 const taxAgent = new Agent(components.agent, {
