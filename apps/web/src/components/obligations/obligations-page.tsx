@@ -6,7 +6,7 @@ import { currentAnoCalendario } from "@/lib/format";
 
 import { ObligationList } from "./obligation-list";
 
-const route = getRouteApi("/_auth/obligations");
+const route = getRouteApi("/_auth/obligations/");
 
 export function ObligationsPage() {
   const { anoCalendario = currentAnoCalendario() } = route.useSearch();

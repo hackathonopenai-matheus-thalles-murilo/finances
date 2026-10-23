@@ -4,6 +4,7 @@ import { internalQuery, mutation, query, type QueryCtx } from "./_generated/serv
 import { requireUserId } from "./lib/identity";
 import { getProfile } from "./lib/profile";
 import { situation } from "./schema";
+import { startSetup } from "./setup";
 
 export type Situation = Infer<typeof situation>;
 
@@ -64,11 +65,12 @@ export const finishOnboarding = mutation({
     if (profile.onboardedAt === undefined) {
       await ctx.db.patch(profile._id, { onboardedAt: Date.now() });
     }
+    await startSetup(ctx, userId, { rereadAll: false });
     return null;
   },
 });
 
-async function situationsOf(ctx: QueryCtx, userId: string) {
+export async function situationsOf(ctx: QueryCtx, userId: string) {
   const profile = await getProfile(ctx, userId);
   if (profile === null) return [];
   return profile.situations;

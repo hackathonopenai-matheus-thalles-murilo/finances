@@ -8,6 +8,7 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@my-better-t-app/ui/components/item";
+import { Link } from "@tanstack/react-router";
 
 import { formatDay, formatShortMonth } from "@/lib/format";
 import { obligationShortLabel } from "@/lib/obligation";
@@ -21,6 +22,7 @@ const dueStatus: Record<
   awaitingApproval: { label: "Aprovar", variant: "default" },
   scheduled: { label: "Ok", variant: "success" },
   needsUser: { label: "Parado", variant: "warning" },
+  preparing: { label: "Preparando", variant: "secondary" },
   upcoming: { label: "Depois", variant: "secondary" },
 };
 
@@ -32,7 +34,11 @@ export function DueObligations({ obligations }: DueObligationsProps) {
   return (
     <OverviewSection title="Próximos vencimentos">
       {obligations.map(({ obligationId, obligation, dueOn, status }) => (
-        <Item key={obligationId} size="sm">
+        <Item
+          key={obligationId}
+          size="sm"
+          render={<Link to="/obligations/$obligationId" params={{ obligationId }} />}
+        >
           <ItemMedia>
             <span className="w-13 rounded-lg border py-1 text-center leading-tight">
               <b className="block font-mono text-base font-semibold">

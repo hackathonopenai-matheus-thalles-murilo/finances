@@ -1,5 +1,4 @@
 import { api } from "@my-better-t-app/backend/convex/_generated/api";
-import type { ObligationRow } from "@my-better-t-app/backend/convex/obligations";
 import { Badge } from "@my-better-t-app/ui/components/badge";
 import { Card } from "@my-better-t-app/ui/components/card";
 import {
@@ -9,24 +8,14 @@ import {
   ItemDescription,
   ItemTitle,
 } from "@my-better-t-app/ui/components/item";
+import { Link } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { CalendarCheck } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
 import Loader from "@/components/loader";
 import { formatDayMonth, formatMoney } from "@/lib/format";
-import { obligationLabel } from "@/lib/obligation";
-
-const obligationStatus: Record<
-  ObligationRow["status"],
-  { label: string; variant: "default" | "success" | "warning" | "secondary" }
-> = {
-  upcoming: { label: "Em breve", variant: "secondary" },
-  needsUser: { label: "Precisa de você", variant: "warning" },
-  awaitingApproval: { label: "Aguardando aprovação", variant: "default" },
-  scheduled: { label: "Agendado", variant: "success" },
-  paid: { label: "Pago", variant: "success" },
-};
+import { obligationLabel, obligationStatus } from "@/lib/obligation";
 
 export type ObligationListProps = {
   anoCalendario: number;
@@ -50,7 +39,11 @@ export function ObligationList({ anoCalendario }: ObligationListProps) {
   return (
     <Card size="flush">
       {obligations.map(({ obligationId, obligation, dueOn, amountCentavos, status }) => (
-        <Item key={obligationId} size="sm">
+        <Item
+          key={obligationId}
+          size="sm"
+          render={<Link to="/obligations/$obligationId" params={{ obligationId }} />}
+        >
           <ItemContent>
             <ItemTitle>{obligationLabel(obligation)}</ItemTitle>
             <ItemDescription>

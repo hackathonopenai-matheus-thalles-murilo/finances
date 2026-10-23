@@ -1,5 +1,6 @@
 import type { ObligationSummary, Pendencia } from "@my-better-t-app/backend/convex/overview";
-import { Button } from "@my-better-t-app/ui/components/button";
+import { buttonVariants } from "@my-better-t-app/ui/components/button";
+import { Link } from "@tanstack/react-router";
 import { Stamp } from "lucide-react";
 
 import {
@@ -16,6 +17,7 @@ import { PendenciaItem } from "./pendencia-item";
 const guideName: Record<ObligationSummary["kind"], string> = {
   carneLeao: "o DARF do carnê-leão",
   dasMei: "o DAS do MEI",
+  dasSimples: "o DAS do Simples Nacional",
   dirpf: "o DARF da DIRPF",
 };
 
@@ -29,7 +31,7 @@ export type ApprovalPendenciaProps = {
 };
 
 export function ApprovalPendencia({ pendencia }: ApprovalPendenciaProps) {
-  const { obligation, amountCentavos, dueOn, preparedAt } = pendencia;
+  const { obligationId, obligation, amountCentavos, dueOn, preparedAt } = pendencia;
 
   return (
     <PendenciaItem
@@ -39,10 +41,13 @@ export function ApprovalPendencia({ pendencia }: ApprovalPendenciaProps) {
       title={approvalTitle(obligation)}
       description={`Preparado pelo agente fiscal em ${formatTimestampDayMonth(preparedAt)}`}
       actions={
-        <>
-          <Button>Revisar e aprovar</Button>
-          <Button variant="outline">Ver cálculo</Button>
-        </>
+        <Link
+          to="/obligations/$obligationId"
+          params={{ obligationId }}
+          className={buttonVariants()}
+        >
+          Revisar e aprovar
+        </Link>
       }
       aside={
         <>

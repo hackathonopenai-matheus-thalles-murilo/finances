@@ -4,7 +4,9 @@ import { internal } from "./_generated/api";
 import { internalAction, internalMutation, internalQuery } from "./_generated/server";
 import { consentState, toSaoPauloDate } from "./lib/connectionStatus";
 import { Pluggy } from "./lib/pluggy";
+import { getProfile } from "./lib/profile";
 import { syncStatus } from "./schema";
+import { startSetup } from "./setup";
 
 const MAX_WAIT_ATTEMPTS = 20;
 const SWEEP_BATCH_SIZE = 500;
@@ -66,7 +68,7 @@ export const run = internalAction({
 
     await ctx.runMutation(internal.connectionSync.saveConsent, { ...consent, sync: "syncing" });
     const syncedAt = Date.now();
-    for (const account of await pluggy.listAccounts(connection.externalId)) {
+    for (const account of await pluggy.listAccounts(connection.externalId, item.isSandbox)) {
       const accountId = await ctx.runMutation(internal.connectionSync.saveAccount, {
         connectionId,
         account,
@@ -190,6 +192,12 @@ export const markSynced = internalMutation({
   returns: v.null(),
   handler: async (ctx, { connectionId, syncedAt }) => {
     await ctx.db.patch(connectionId, { sync: "synced", syncedAt });
+    const connection = await ctx.db.get(connectionId);
+    if (connection === null) return null;
+    const profile = await getProfile(ctx, connection.userId);
+    if (profile?.onboardedAt !== undefined) {
+      await startSetup(ctx, connection.userId, { rereadAll: false });
+    }
     return null;
   },
 });

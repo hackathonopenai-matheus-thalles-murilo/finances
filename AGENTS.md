@@ -18,7 +18,7 @@ Tax agents can do almost anything on the user's behalf except take the final ste
 
 ### 3. Financial data is the most private data there is
 
-We collect the minimum scope we need, keep it only as long as the consent lasts, and delete it when the user leaves. LGPD is the floor. Data never goes anywhere the user did not agree to, and that includes logs, error trackers, analytics and prompts sent to third parties.
+We collect the minimum scope we need, keep it only as long as the consent lasts, and delete it when the user leaves. LGPD is the floor.
 
 ### 4. Two channels, one product
 

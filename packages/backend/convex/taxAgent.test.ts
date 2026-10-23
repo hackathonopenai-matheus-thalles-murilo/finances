@@ -27,6 +27,31 @@ describe("tax agent thread", () => {
     expect(await ana.query(api.taxAgent.thread, {})).toBe(threadId);
   });
 
+  test("clearing the history empties the chat and the next message starts a new thread", async () => {
+    const { ana } = setup();
+    await ana.mutation(api.taxAgent.send, { text: "Quando vence meu DAS?" });
+    const clearedThreadId = await ana.query(api.taxAgent.thread, {});
+
+    await ana.mutation(api.taxAgent.clearHistory, {});
+    expect(await ana.query(api.taxAgent.thread, {})).toBeNull();
+
+    await ana.mutation(api.taxAgent.send, { text: "E o carnê-leão?" });
+    const threadId = await ana.query(api.taxAgent.thread, {});
+    expect(threadId).not.toBeNull();
+    expect(threadId).not.toBe(clearedThreadId);
+  });
+
+  test("clearing one user's history keeps everyone else's", async () => {
+    const { ana, bruno } = setup();
+    await ana.mutation(api.taxAgent.send, { text: "Quando vence meu DAS?" });
+    await bruno.mutation(api.taxAgent.send, { text: "E o carnê-leão?" });
+    const brunoThreadId = await bruno.query(api.taxAgent.thread, {});
+
+    await ana.mutation(api.taxAgent.clearHistory, {});
+
+    expect(await bruno.query(api.taxAgent.thread, {})).toBe(brunoThreadId);
+  });
+
   test("a user cannot read someone else's thread", async () => {
     const { ana, bruno } = setup();
     await ana.mutation(api.taxAgent.send, { text: "Quando vence meu DAS?" });

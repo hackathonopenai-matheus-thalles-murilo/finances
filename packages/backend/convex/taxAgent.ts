@@ -16,10 +16,15 @@ import { z } from "zod";
 
 import { components, internal } from "./_generated/api";
 import { internalAction, mutation, query, type QueryCtx } from "./_generated/server";
-import type { ObligationRow } from "./obligations";
+import type { Id } from "./_generated/dataModel";
+import type { ObligationDetail, ObligationRow } from "./obligations";
 import type { Situation } from "./profile";
 import { requireUserId } from "./lib/identity";
 import { openRouterModel, taxAgentModelFor } from "./lib/taxAgentModel";
+
+const obligationIdSchema = z
+  .custom<Id<"obligations">>((value) => typeof value === "string")
+  .describe("O obligationId que veio da ferramenta obligations.");
 
 const taxAgent = new Agent(components.agent, {
   name: "Agente fiscal",
@@ -32,6 +37,8 @@ const taxAgent = new Agent(components.agent, {
     "Use as ferramentas para consultar o perfil fiscal e as obrigações do usuário. Se não souber, diga que não sabe.",
     "Ao falar de um ano, diga se é o ano-calendário (quando a renda aconteceu) ou o exercício (quando é declarado).",
     "Você não paga, não envia declarações e não assina nada. Isso sempre espera a aprovação do usuário no painel.",
+    "Você pode preparar uma guia. Depois, diga ao usuário que ela espera a aprovação dele no painel.",
+    "Se o usuário quiser fazer por conta própria, passe o passo a passo da obrigação: onde fazer, o que ter em mãos e os valores do cálculo. Depois ele marca como feito no painel.",
     "Nunca peça senhas, certificados digitais ou acesso ao gov.br. Se o usuário enviar algum, peça para não enviar.",
     "Nunca escreva um CPF ou CNPJ completo.",
   ].join("\n"),
@@ -51,6 +58,20 @@ const taxAgent = new Agent(components.agent, {
       }),
       execute: async (ctx, { anoCalendario }): Promise<ObligationRow[]> =>
         ctx.runQuery(internal.obligations.listFor, { userId: toolUserId(ctx), anoCalendario }),
+    }),
+    obligation: createTool({
+      description:
+        "Mostra uma obrigação: o cálculo com a origem de cada valor, a guia preparada e o passo a passo para o usuário fazer por conta própria.",
+      inputSchema: z.object({ obligationId: obligationIdSchema }),
+      execute: async (ctx, { obligationId }): Promise<ObligationDetail> =>
+        ctx.runQuery(internal.obligations.getFor, { userId: toolUserId(ctx), obligationId }),
+    }),
+    prepareGuide: createTool({
+      description:
+        "Calcula a obrigação e pede a guia à Receita. Não paga nada: o usuário revisa e aprova a guia no painel.",
+      inputSchema: z.object({ obligationId: obligationIdSchema }),
+      execute: async (ctx, { obligationId }) =>
+        ctx.runMutation(internal.guides.prepareFor, { userId: toolUserId(ctx), obligationId }),
     }),
   },
 });
@@ -77,6 +98,19 @@ export const send = mutation({
       threadId,
       promptMessageId: messageId,
     });
+    return null;
+  },
+});
+
+export const clearHistory = mutation({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    const threadId = await threadIdOf(ctx, await requireUserId(ctx));
+    if (threadId === null) return null;
+
+    await taxAgent.updateThreadMetadata(ctx, { threadId, patch: { status: "archived" } });
+    await taxAgent.deleteThreadAsync(ctx, { threadId });
     return null;
   },
 });
@@ -120,7 +154,7 @@ async function threadIdOf(ctx: QueryCtx, userId: string) {
     paginationOpts: { numItems: 1, cursor: null },
   });
   const [latest] = page;
-  if (latest === undefined) return null;
+  if (latest === undefined || latest.status === "archived") return null;
   return latest._id;
 }
 

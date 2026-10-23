@@ -2,7 +2,14 @@ import { v, type Infer } from "convex/values";
 
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
-import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import {
+  action,
+  internalMutation,
+  internalQuery,
+  mutation,
+  query,
+  type MutationCtx,
+} from "./_generated/server";
 import { requireUserId } from "./lib/identity";
 import { Pluggy } from "./lib/pluggy";
 import { connectionStatus, situation, syncStatus } from "./schema";
@@ -78,12 +85,17 @@ export const connect = action({
       throw new Error(`Item ${itemId} not found`);
     }
 
-    const connectionId = await ctx.runMutation(internal.connections.save, {
+    const { connectionId, replacedExternalId } = await ctx.runMutation(internal.connections.save, {
       userId,
       externalId: itemId,
+      institutionId: item.institutionId,
       institution: item.institution,
       situations: situation === undefined ? [] : [situation],
     });
+    if (replacedExternalId !== undefined) {
+      await pluggy.deleteItem(replacedExternalId);
+      while (await ctx.runMutation(internal.connections.clearData, { connectionId }));
+    }
     await ctx.scheduler.runAfter(0, internal.connectionSync.run, { connectionId, attempt: 0 });
     return connectionId;
   },
@@ -132,49 +144,82 @@ export const save = internalMutation({
   args: {
     userId: v.string(),
     externalId: v.string(),
+    institutionId: v.string(),
     institution: v.string(),
     situations: v.array(situation),
   },
-  returns: v.id("connections"),
+  returns: v.object({
+    connectionId: v.id("connections"),
+    replacedExternalId: v.optional(v.string()),
+  }),
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("connections")
-      .withIndex("by_externalId", (q) => q.eq("externalId", args.externalId))
+      .withIndex("by_user_institutionId", (q) =>
+        q.eq("userId", args.userId).eq("institutionId", args.institutionId),
+      )
       .unique();
 
     if (existing === null) {
-      return ctx.db.insert("connections", { ...args, status: "active", sync: "syncing" });
+      const connectionId = await ctx.db.insert("connections", {
+        ...args,
+        status: "active",
+        sync: "syncing",
+      });
+      return { connectionId };
     }
 
     await ctx.db.patch(existing._id, {
+      externalId: args.externalId,
       situations: [...new Set([...existing.situations, ...args.situations])],
       sync: "syncing",
     });
-    return existing._id;
+    if (existing.externalId === args.externalId) return { connectionId: existing._id };
+    return { connectionId: existing._id, replacedExternalId: existing.externalId };
   },
+});
+
+export const clearData = internalMutation({
+  args: { connectionId: v.id("connections") },
+  returns: v.boolean(),
+  handler: async (ctx, { connectionId }) => deleteDataBatch(ctx, connectionId),
 });
 
 export const remove = internalMutation({
   args: { connectionId: v.id("connections") },
   returns: v.null(),
   handler: async (ctx, { connectionId }) => {
-    const transactions = await ctx.db
-      .query("transactions")
-      .withIndex("by_connection", (q) => q.eq("connectionId", connectionId))
-      .take(DELETE_BATCH_SIZE);
-    await Promise.all(transactions.map((transaction) => ctx.db.delete(transaction._id)));
-
-    if (transactions.length === DELETE_BATCH_SIZE) {
+    if (await deleteDataBatch(ctx, connectionId)) {
       await ctx.scheduler.runAfter(0, internal.connections.remove, { connectionId });
       return null;
     }
-
-    const accounts = await ctx.db
-      .query("accounts")
-      .withIndex("by_connection", (q) => q.eq("connectionId", connectionId))
-      .collect();
-    await Promise.all(accounts.map((account) => ctx.db.delete(account._id)));
     await ctx.db.delete(connectionId);
     return null;
   },
 });
+
+async function deleteDataBatch(ctx: MutationCtx, connectionId: Id<"connections">) {
+  const questions = await ctx.db
+    .query("foreignIncomeQuestions")
+    .withIndex("by_connection", (q) => q.eq("connectionId", connectionId))
+    .collect();
+  await Promise.all(
+    questions
+      .filter((question) => question.status === "open")
+      .map((question) => ctx.db.delete(question._id)),
+  );
+
+  const transactions = await ctx.db
+    .query("transactions")
+    .withIndex("by_connection", (q) => q.eq("connectionId", connectionId))
+    .take(DELETE_BATCH_SIZE);
+  await Promise.all(transactions.map((transaction) => ctx.db.delete(transaction._id)));
+  if (transactions.length === DELETE_BATCH_SIZE) return true;
+
+  const accounts = await ctx.db
+    .query("accounts")
+    .withIndex("by_connection", (q) => q.eq("connectionId", connectionId))
+    .collect();
+  await Promise.all(accounts.map((account) => ctx.db.delete(account._id)));
+  return false;
+}

@@ -37,6 +37,7 @@ async function setupAccount() {
     ctx.db.insert("connections", {
       userId: "user-1",
       externalId: "item-1",
+      institutionId: "2",
       institution: "Pluggy Bank",
       situations: [],
       status: "active",
@@ -148,5 +149,67 @@ describe("transaction sync", () => {
       ...(await ctx.db.query("transactions").collect()),
     ]);
     expect(remaining).toEqual([]);
+  });
+});
+
+describe("reconnecting the same bank", () => {
+  function saveItem(userId: string, externalId: string, situation: "salary" | "foreignIncome") {
+    return {
+      userId,
+      externalId,
+      institutionId: "2",
+      institution: "Pluggy Bank",
+      situations: [situation],
+    };
+  }
+
+  test("upserts into the existing connection and reports the replaced item", async () => {
+    const t = convexTest(schema, modules);
+    const first = await t.mutation(
+      internal.connections.save,
+      saveItem("user-1", "item-1", "salary"),
+    );
+    const second = await t.mutation(
+      internal.connections.save,
+      saveItem("user-1", "item-2", "foreignIncome"),
+    );
+
+    expect(second).toEqual({ connectionId: first.connectionId, replacedExternalId: "item-1" });
+    const connections = await t.run((ctx) => ctx.db.query("connections").collect());
+    expect(connections).toHaveLength(1);
+    expect(connections[0]).toMatchObject({
+      externalId: "item-2",
+      situations: ["salary", "foreignIncome"],
+    });
+  });
+
+  test("another user's connection to the same bank is left alone", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(internal.connections.save, saveItem("user-1", "item-1", "salary"));
+    const other = await t.mutation(
+      internal.connections.save,
+      saveItem("user-2", "item-2", "salary"),
+    );
+
+    expect(other.replacedExternalId).toBeUndefined();
+    expect(await t.run((ctx) => ctx.db.query("connections").collect())).toHaveLength(2);
+  });
+
+  test("clearing data drops the replaced item's accounts and transactions, keeping the connection", async () => {
+    const { t, connectionId, accountId } = await setupAccount();
+    await t.mutation(internal.connectionSync.saveTransactions, {
+      accountId,
+      transactions: [bankTransaction("old-tx", 1000)],
+      syncedAt: 1,
+    });
+
+    while (await t.mutation(internal.connections.clearData, { connectionId }));
+
+    const remaining = await t.run(async (ctx) => ({
+      connections: (await ctx.db.query("connections").collect()).length,
+      accounts: (await ctx.db.query("accounts").collect()).length,
+      transactions: (await ctx.db.query("transactions").collect()).length,
+    }));
+    expect(remaining).toEqual({ connections: 1, accounts: 0, transactions: 0 });
   });
 });

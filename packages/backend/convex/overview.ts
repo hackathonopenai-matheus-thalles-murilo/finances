@@ -3,8 +3,10 @@ import { v, type Infer } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { query, type QueryCtx } from "./_generated/server";
 import { requireUserId } from "./lib/identity";
+import { currentGuide } from "./lib/obligation";
 import { getProfile } from "./lib/profile";
-import { obligationKind } from "./schema";
+import { factSuggestion, obligationKind } from "./schema";
+import { latestRun } from "./setup";
 
 export const obligationSummary = v.object({
   kind: obligationKind,
@@ -16,6 +18,7 @@ const pendencia = v.union(
   v.object({
     type: v.literal("approval"),
     guideId: v.id("guides"),
+    obligationId: v.id("obligations"),
     obligation: obligationSummary,
     amountCentavos: v.number(),
     dueOn: v.optional(v.string()),
@@ -41,6 +44,15 @@ const pendencia = v.union(
   v.object({
     type: v.literal("onboarding"),
   }),
+  v.object({
+    type: v.literal("fact"),
+    factId: v.id("profileFacts"),
+    suggestion: factSuggestion,
+    evidence: v.string(),
+  }),
+  v.object({
+    type: v.literal("setupFailed"),
+  }),
 );
 
 const scheduledGuide = v.object({
@@ -64,6 +76,7 @@ const dueObligation = v.object({
   dueOn: v.optional(v.string()),
   status: v.union(
     v.literal("upcoming"),
+    v.literal("preparing"),
     v.literal("needsUser"),
     v.literal("awaitingApproval"),
     v.literal("scheduled"),
@@ -80,6 +93,7 @@ export const get = query({
   args: { anoCalendario: v.number() },
   returns: v.object({
     hasFiscalProfile: v.boolean(),
+    isPreparing: v.boolean(),
     pendencias: v.array(pendencia),
     scheduled: v.array(scheduledGuide),
     paid: v.array(paidGuide),
@@ -89,7 +103,10 @@ export const get = query({
     const userId = await requireUserId(ctx);
     const profile = await getProfile(ctx, userId);
 
+    const run = await latestRun(ctx, userId);
+
     const pendencias: Pendencia[] = [
+      ...(await factPendencias(ctx, userId)),
       ...(await approvalPendencias(ctx, userId)),
       ...(await foreignIncomePendencias(ctx, userId)),
       ...(await connectionPendencias(ctx, userId, "expired")),
@@ -97,6 +114,9 @@ export const get = query({
     ];
     if (profile !== null && profile.onboardedAt === undefined) {
       pendencias.push({ type: "onboarding" });
+    }
+    if (run?.status === "failed") {
+      pendencias.push({ type: "setupFailed" });
     }
 
     const obligations = await ctx.db
@@ -111,10 +131,8 @@ export const get = query({
     const dueSoon: DueObligation[] = [];
 
     for (const obligation of obligations) {
-      const guide = await ctx.db
-        .query("guides")
-        .withIndex("by_obligation", (q) => q.eq("obligationId", obligation._id))
-        .first();
+      if (obligation.status === "doneByUser") continue;
+      const guide = await currentGuide(ctx, obligation._id);
       const summary = summarize(obligation);
 
       if (guide?.status === "paid") {
@@ -139,7 +157,7 @@ export const get = query({
           guideId: guide._id,
           obligation: summary,
           amountCentavos: guide.amountCentavos,
-          approvedAt: guide.approvedAt,
+          approvedAt: guide.approval.approvedAt,
           debitOn: guide.debitOn,
         });
       }
@@ -147,6 +165,7 @@ export const get = query({
 
     return {
       hasFiscalProfile: profile !== null,
+      isPreparing: run?.status === "running",
       pendencias,
       scheduled,
       paid: paid.sort((a, b) => b.paidOn.localeCompare(a.paidOn)).slice(0, 3),
@@ -189,6 +208,7 @@ async function approvalPendencias(ctx: QueryCtx, userId: string): Promise<Penden
       return {
         type: "approval",
         guideId: guide._id,
+        obligationId: obligation._id,
         obligation: summarize(obligation),
         amountCentavos: guide.amountCentavos,
         dueOn: obligation.dueOn,
@@ -196,6 +216,20 @@ async function approvalPendencias(ctx: QueryCtx, userId: string): Promise<Penden
       };
     }),
   );
+}
+
+async function factPendencias(ctx: QueryCtx, userId: string): Promise<Pendencia[]> {
+  const facts = await ctx.db
+    .query("profileFacts")
+    .withIndex("by_user_status", (q) => q.eq("userId", userId).eq("status", "proposed"))
+    .collect();
+
+  return facts.flatMap((fact): Pendencia[] => {
+    if (fact.status !== "proposed") return [];
+    return [
+      { type: "fact", factId: fact._id, suggestion: fact.suggestion, evidence: fact.evidence },
+    ];
+  });
 }
 
 async function foreignIncomePendencias(ctx: QueryCtx, userId: string): Promise<Pendencia[]> {
@@ -210,7 +244,7 @@ async function foreignIncomePendencias(ctx: QueryCtx, userId: string): Promise<P
     institution: question.institution,
     anoCalendario: question.anoCalendario,
     month: question.month,
-    transactionCount: question.transactionCount,
+    transactionCount: question.transactionIds.length,
     amountCents: question.amountCents,
     currency: question.currency,
   }));
