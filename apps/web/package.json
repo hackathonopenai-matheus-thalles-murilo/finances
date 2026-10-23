@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@clerk/react": "^6.17.8",
+    "@clerk/ui": "^1.41.1",
     "@my-better-t-app/backend": "workspace:*",
     "@my-better-t-app/ui": "workspace:*",
     "@tailwindcss/vite": "^4.3.3",

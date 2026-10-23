@@ -1,3 +1,4 @@
+import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/react";
 import { Link } from "@tanstack/react-router";
 
 import { ModeToggle } from "./mode-toggle";
@@ -22,6 +23,13 @@ export default function Header() {
         </nav>
         <div className="flex items-center gap-2">
           <ModeToggle />
+          <Show when="signed-out">
+            <SignInButton />
+            <SignUpButton />
+          </Show>
+          <Show when="signed-in">
+            <UserButton />
+          </Show>
         </div>
       </div>
       <hr />
