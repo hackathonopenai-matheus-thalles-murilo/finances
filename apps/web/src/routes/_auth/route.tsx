@@ -2,6 +2,7 @@ import { RedirectToSignIn, Show } from "@clerk/react";
 import { Outlet, createFileRoute } from "@tanstack/react-router";
 import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
 
+import Loader from "@/components/loader";
 import { AppSidebar } from "@/components/sidebar/app-sidebar";
 
 export const Route = createFileRoute("/_auth")({
@@ -28,7 +29,9 @@ function AuthLayout() {
         </Show>
       </Unauthenticated>
       <AuthLoading>
-        <div>Loading...</div>
+        <div className="h-svh">
+          <Loader />
+        </div>
       </AuthLoading>
     </>
   );
