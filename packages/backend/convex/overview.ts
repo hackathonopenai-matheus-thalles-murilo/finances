@@ -63,12 +63,21 @@ const scheduledGuide = v.object({
   debitOn: v.string(),
 });
 
-const paidGuide = v.object({
-  guideId: v.id("guides"),
-  obligation: obligationSummary,
-  amountCentavos: v.number(),
-  paidOn: v.string(),
-});
+const doneObligation = v.union(
+  v.object({
+    status: v.literal("paid"),
+    obligationId: v.id("obligations"),
+    obligation: obligationSummary,
+    amountCentavos: v.number(),
+    doneOn: v.string(),
+  }),
+  v.object({
+    status: v.literal("doneByUser"),
+    obligationId: v.id("obligations"),
+    obligation: obligationSummary,
+    doneOn: v.string(),
+  }),
+);
 
 const dueObligation = v.object({
   obligationId: v.id("obligations"),
@@ -86,7 +95,7 @@ const dueObligation = v.object({
 export type ObligationSummary = Infer<typeof obligationSummary>;
 export type Pendencia = Infer<typeof pendencia>;
 export type ScheduledGuide = Infer<typeof scheduledGuide>;
-export type PaidGuide = Infer<typeof paidGuide>;
+export type DoneObligation = Infer<typeof doneObligation>;
 export type DueObligation = Infer<typeof dueObligation>;
 
 export const get = query({
@@ -96,7 +105,7 @@ export const get = query({
     isPreparing: v.boolean(),
     pendencias: v.array(pendencia),
     scheduled: v.array(scheduledGuide),
-    paid: v.array(paidGuide),
+    done: v.array(doneObligation),
     dueSoon: v.array(dueObligation),
   }),
   handler: async (ctx, { anoCalendario }) => {
@@ -127,20 +136,30 @@ export const get = query({
       .collect();
 
     const scheduled: ScheduledGuide[] = [];
-    const paid: PaidGuide[] = [];
+    const done: DoneObligation[] = [];
     const dueSoon: DueObligation[] = [];
 
     for (const obligation of obligations) {
-      if (obligation.status === "doneByUser") continue;
-      const guide = await currentGuide(ctx, obligation._id);
       const summary = summarize(obligation);
 
+      if (obligation.status === "doneByUser") {
+        done.push({
+          status: "doneByUser",
+          obligationId: obligation._id,
+          obligation: summary,
+          doneOn: obligation.doneOn,
+        });
+        continue;
+      }
+
+      const guide = await currentGuide(ctx, obligation._id);
       if (guide?.status === "paid") {
-        paid.push({
-          guideId: guide._id,
+        done.push({
+          status: "paid",
+          obligationId: obligation._id,
           obligation: summary,
           amountCentavos: guide.amountCentavos,
-          paidOn: guide.paidOn,
+          doneOn: guide.paidOn,
         });
         continue;
       }
@@ -168,7 +187,7 @@ export const get = query({
       isPreparing: run?.status === "running",
       pendencias,
       scheduled,
-      paid: paid.sort((a, b) => b.paidOn.localeCompare(a.paidOn)).slice(0, 3),
+      done: done.sort((a, b) => b.doneOn.localeCompare(a.doneOn)).slice(0, 3),
       dueSoon: dueSoon.sort(byDueOn).slice(0, 5),
     };
   },

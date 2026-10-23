@@ -9,28 +9,15 @@ import {
   ItemTitle,
 } from "@my-better-t-app/ui/components/item";
 import { Link } from "@tanstack/react-router";
-import { CalendarCheck } from "lucide-react";
 
-import { EmptyState } from "@/components/empty-state";
 import { formatDayMonth, formatMoney } from "@/lib/format";
 import { obligationLabel, obligationStatus } from "@/lib/obligation";
 
 export type ObligationListProps = {
   obligations: ObligationRow[];
-  anoCalendario: number;
 };
 
-export function ObligationList({ anoCalendario, obligations }: ObligationListProps) {
-  if (obligations.length === 0) {
-    return (
-      <EmptyState
-        icon={CalendarCheck}
-        title="Nenhuma obrigação"
-        description={`Não encontramos obrigações no ano-calendário ${anoCalendario}.`}
-      />
-    );
-  }
-
+export function ObligationList({ obligations }: ObligationListProps) {
   return (
     <Card size="flush">
       {obligations.map(({ obligationId, obligation, dueOn, amountCentavos, status }) => (

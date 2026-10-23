@@ -22,6 +22,9 @@ export const overview = internalMutation({
 
     const dasMeiFacts: DasMeiFacts = { kind: "dasMei", activity: "servicos" };
 
+    const dasMeiAgosto = await insertObligation(ctx, userId, "dasMei", 8, dasMeiFacts);
+    await ctx.db.patch(dasMeiAgosto, { status: "doneByUser", doneOn: "2026-09-15" });
+
     const dasMeiSetembro = await insertObligation(ctx, userId, "dasMei", 9, dasMeiFacts);
     await insertPaidGuide(ctx, dasMeiSetembro, "2026-10-16T12:00:00-03:00", "2026-10-20");
 
