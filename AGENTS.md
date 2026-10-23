@@ -36,6 +36,7 @@ Treat the rest of this file as good defaults, not hard rules. If something here 
 
 We are building this in a hackathon, so the focus is getting the thing done fast.
 
+- Work directly on `main`. Do not create branches or worktrees, including for subagents.
 - Spawn subagents freely to speed things up. Run independent work in parallel: research, separate files, checks.
 - Going fast never relaxes "What we never compromise on" or "The three ways to hurt yourself".
 
