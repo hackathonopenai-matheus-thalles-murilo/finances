@@ -3,12 +3,11 @@ export type PageProps = {
   description: string;
   actions?: React.ReactNode;
   children: React.ReactNode;
-  className?: string;
 };
 
-export function Page({ title, description, actions, children, className }: PageProps) {
+export function Page({ title, description, actions, children }: PageProps) {
   return (
-    <div className={`mx-auto flex max-w-4xl flex-col gap-6 px-10 py-7 ${className ?? ""}`}>
+    <div className="mx-auto flex max-w-4xl flex-col gap-6 px-10 py-7">
       <header className="flex items-end justify-between gap-6">
         <div>
           <h1 className="text-[26px] font-semibold tracking-tight">{title}</h1>
