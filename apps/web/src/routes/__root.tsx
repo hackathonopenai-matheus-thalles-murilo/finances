@@ -17,7 +17,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       },
       {
         name: "description",
-        content: "my-better-t-app is a web application",
+        content: "Seus impostos, do Open Finance à Receita Federal.",
       },
     ],
     links: [
