@@ -9,7 +9,14 @@ import { v, type Infer } from "convex/values";
 
 import { internal } from "./_generated/api";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { action, internalAction, internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import {
+  action,
+  internalAction,
+  internalMutation,
+  internalQuery,
+  mutation,
+  query,
+} from "./_generated/server";
 import { requireUserId } from "./lib/identity";
 import { seal, unseal } from "./lib/sealed";
 import { sealTokens } from "./lib/taxAgentModel";
