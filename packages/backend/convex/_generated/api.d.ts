@@ -8,6 +8,8 @@
  * @module
  */
 
+import type * as cashflow from "../cashflow.js";
+import type * as cashflowWhatsApp from "../cashflowWhatsApp.js";
 import type * as chatgpt from "../chatgpt.js";
 import type * as connectionSync from "../connectionSync.js";
 import type * as connections from "../connections.js";
@@ -22,6 +24,7 @@ import type * as lib_pluggy from "../lib/pluggy.js";
 import type * as lib_profile from "../lib/profile.js";
 import type * as lib_sealed from "../lib/sealed.js";
 import type * as lib_taxAgentModel from "../lib/taxAgentModel.js";
+import type * as lib_whatsappPhone from "../lib/whatsappPhone.js";
 import type * as obligations from "../obligations.js";
 import type * as onboarding from "../onboarding.js";
 import type * as overview from "../overview.js";
@@ -29,6 +32,7 @@ import type * as privateData from "../privateData.js";
 import type * as profile from "../profile.js";
 import type * as seed from "../seed.js";
 import type * as taxAgent from "../taxAgent.js";
+import type * as whatsapp from "../whatsapp.js";
 
 import type {
   ApiFromModules,
@@ -37,6 +41,8 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  cashflow: typeof cashflow;
+  cashflowWhatsApp: typeof cashflowWhatsApp;
   chatgpt: typeof chatgpt;
   connectionSync: typeof connectionSync;
   connections: typeof connections;
@@ -51,6 +57,7 @@ declare const fullApi: ApiFromModules<{
   "lib/profile": typeof lib_profile;
   "lib/sealed": typeof lib_sealed;
   "lib/taxAgentModel": typeof lib_taxAgentModel;
+  "lib/whatsappPhone": typeof lib_whatsappPhone;
   obligations: typeof obligations;
   onboarding: typeof onboarding;
   overview: typeof overview;
@@ -58,6 +65,7 @@ declare const fullApi: ApiFromModules<{
   profile: typeof profile;
   seed: typeof seed;
   taxAgent: typeof taxAgent;
+  whatsapp: typeof whatsapp;
 }>;
 
 /**

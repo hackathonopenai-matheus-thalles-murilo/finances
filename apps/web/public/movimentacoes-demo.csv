@@ -1,0 +1,10 @@
+descricao,valor,tipo,data,editavel
+Saldo inicial,2000,in,2026-11-01,false
+Venda balcão - Semana 1,1800,in,2026-11-05,true
+Energia e internet,600,out,2026-11-08,false
+Padaria Central,5000,in,2026-11-12,true
+Folha de pagamento,4200,out,2026-11-15,false
+Fornecedor de embalagens,1500,out,2026-11-18,false
+Mercado do Bairro,3500,in,2026-11-22,true
+Aluguel do galpão,2200,out,2026-11-25,false
+Fechamento mensal,4000,in,2026-11-28,true

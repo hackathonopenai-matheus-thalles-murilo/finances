@@ -25,13 +25,10 @@ export async function unseal({ iv, ciphertext }: Sealed) {
 }
 
 function sealingKey() {
-  return crypto.subtle.importKey(
-    "raw",
-    fromBase64(requireEnv("SEALING_KEY")),
-    "AES-GCM",
-    false,
-    ["encrypt", "decrypt"],
-  );
+  return crypto.subtle.importKey("raw", fromBase64(requireEnv("SEALING_KEY")), "AES-GCM", false, [
+    "encrypt",
+    "decrypt",
+  ]);
 }
 
 function toBase64(bytes: Uint8Array) {
