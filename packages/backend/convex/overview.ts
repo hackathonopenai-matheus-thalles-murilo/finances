@@ -1,0 +1,226 @@
+import { v, type Infer } from "convex/values";
+
+import type { Doc, Id } from "./_generated/dataModel";
+import { query, type QueryCtx } from "./_generated/server";
+import { requireUserId } from "./lib/identity";
+import { obligationKind } from "./schema";
+
+const obligationSummary = v.object({
+  kind: obligationKind,
+  anoCalendario: v.number(),
+  month: v.optional(v.number()),
+});
+
+const pendencia = v.union(
+  v.object({
+    type: v.literal("approval"),
+    guideId: v.id("guides"),
+    obligation: obligationSummary,
+    amountCentavos: v.number(),
+    dueOn: v.optional(v.string()),
+    preparedAt: v.number(),
+  }),
+  v.object({
+    type: v.literal("foreignIncome"),
+    questionId: v.id("foreignIncomeQuestions"),
+    institution: v.string(),
+    anoCalendario: v.number(),
+    month: v.number(),
+    transactionCount: v.number(),
+    amountCents: v.number(),
+    currency: v.string(),
+  }),
+  v.object({
+    type: v.literal("connection"),
+    connectionId: v.id("connections"),
+    institution: v.string(),
+    status: v.union(v.literal("expiring"), v.literal("expired")),
+    expiresOn: v.string(),
+  }),
+);
+
+const scheduledGuide = v.object({
+  guideId: v.id("guides"),
+  obligation: obligationSummary,
+  amountCentavos: v.number(),
+  approvedAt: v.number(),
+  debitOn: v.string(),
+});
+
+const paidGuide = v.object({
+  guideId: v.id("guides"),
+  obligation: obligationSummary,
+  amountCentavos: v.number(),
+  paidOn: v.string(),
+});
+
+const dueObligation = v.object({
+  obligationId: v.id("obligations"),
+  obligation: obligationSummary,
+  dueOn: v.optional(v.string()),
+  status: v.union(
+    v.literal("upcoming"),
+    v.literal("needsUser"),
+    v.literal("awaitingApproval"),
+    v.literal("scheduled"),
+  ),
+});
+
+export type ObligationSummary = Infer<typeof obligationSummary>;
+export type Pendencia = Infer<typeof pendencia>;
+export type ScheduledGuide = Infer<typeof scheduledGuide>;
+export type PaidGuide = Infer<typeof paidGuide>;
+export type DueObligation = Infer<typeof dueObligation>;
+
+export const get = query({
+  args: { anoCalendario: v.number() },
+  returns: v.object({
+    pendencias: v.array(pendencia),
+    scheduled: v.array(scheduledGuide),
+    paid: v.array(paidGuide),
+    dueSoon: v.array(dueObligation),
+  }),
+  handler: async (ctx, { anoCalendario }) => {
+    const userId = await requireUserId(ctx);
+
+    const pendencias = [
+      ...(await approvalPendencias(ctx, userId)),
+      ...(await foreignIncomePendencias(ctx, userId)),
+      ...(await connectionPendencias(ctx, userId, "expired")),
+      ...(await connectionPendencias(ctx, userId, "expiring")),
+    ];
+
+    const obligations = await ctx.db
+      .query("obligations")
+      .withIndex("by_user_anoCalendario", (q) =>
+        q.eq("userId", userId).eq("anoCalendario", anoCalendario),
+      )
+      .collect();
+
+    const scheduled: ScheduledGuide[] = [];
+    const paid: PaidGuide[] = [];
+    const dueSoon: DueObligation[] = [];
+
+    for (const obligation of obligations) {
+      const guide = await ctx.db
+        .query("guides")
+        .withIndex("by_obligation", (q) => q.eq("obligationId", obligation._id))
+        .first();
+      const summary = summarize(obligation);
+
+      if (guide?.status === "paid") {
+        paid.push({
+          guideId: guide._id,
+          obligation: summary,
+          amountCentavos: guide.amountCentavos,
+          paidOn: guide.paidOn,
+        });
+        continue;
+      }
+
+      dueSoon.push({
+        obligationId: obligation._id,
+        obligation: summary,
+        dueOn: obligation.dueOn,
+        status: guide === null ? obligation.status : guide.status,
+      });
+
+      if (guide?.status === "scheduled") {
+        scheduled.push({
+          guideId: guide._id,
+          obligation: summary,
+          amountCentavos: guide.amountCentavos,
+          approvedAt: guide.approvedAt,
+          debitOn: guide.debitOn,
+        });
+      }
+    }
+
+    return {
+      pendencias,
+      scheduled,
+      paid: paid.sort((a, b) => b.paidOn.localeCompare(a.paidOn)).slice(0, 3),
+      dueSoon: dueSoon.sort(byDueOn).slice(0, 5),
+    };
+  },
+});
+
+function summarize(obligation: Doc<"obligations">) {
+  return {
+    kind: obligation.kind,
+    anoCalendario: obligation.anoCalendario,
+    month: obligation.month,
+  };
+}
+
+function byDueOn(a: DueObligation, b: DueObligation) {
+  if (a.dueOn === undefined) return 1;
+  if (b.dueOn === undefined) return -1;
+  return a.dueOn.localeCompare(b.dueOn);
+}
+
+async function getObligation(ctx: QueryCtx, obligationId: Id<"obligations">) {
+  const obligation = await ctx.db.get(obligationId);
+  if (obligation === null) {
+    throw new Error(`Obligation ${obligationId} not found`);
+  }
+  return obligation;
+}
+
+async function approvalPendencias(ctx: QueryCtx, userId: string): Promise<Pendencia[]> {
+  const guides = await ctx.db
+    .query("guides")
+    .withIndex("by_user_status", (q) => q.eq("userId", userId).eq("status", "awaitingApproval"))
+    .collect();
+
+  return Promise.all(
+    guides.map(async (guide) => {
+      const obligation = await getObligation(ctx, guide.obligationId);
+      return {
+        type: "approval",
+        guideId: guide._id,
+        obligation: summarize(obligation),
+        amountCentavos: guide.amountCentavos,
+        dueOn: obligation.dueOn,
+        preparedAt: guide.preparedAt,
+      };
+    }),
+  );
+}
+
+async function foreignIncomePendencias(ctx: QueryCtx, userId: string): Promise<Pendencia[]> {
+  const questions = await ctx.db
+    .query("foreignIncomeQuestions")
+    .withIndex("by_user_status", (q) => q.eq("userId", userId).eq("status", "open"))
+    .collect();
+
+  return questions.map((question) => ({
+    type: "foreignIncome",
+    questionId: question._id,
+    institution: question.institution,
+    anoCalendario: question.anoCalendario,
+    month: question.month,
+    transactionCount: question.transactionCount,
+    amountCents: question.amountCents,
+    currency: question.currency,
+  }));
+}
+
+async function connectionPendencias(
+  ctx: QueryCtx,
+  userId: string,
+  status: "expiring" | "expired",
+): Promise<Pendencia[]> {
+  const connections = await ctx.db
+    .query("connections")
+    .withIndex("by_user_status", (q) => q.eq("userId", userId).eq("status", status))
+    .collect();
+
+  return connections.map((connection) => ({
+    type: "connection",
+    connectionId: connection._id,
+    institution: connection.institution,
+    status,
+    expiresOn: connection.expiresOn,
+  }));
+}

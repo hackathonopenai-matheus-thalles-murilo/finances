@@ -1,21 +1,9 @@
-import { useUser } from "@clerk/react";
-import { api } from "@my-better-t-app/backend/convex/_generated/api";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { z } from "zod";
+
+import { OverviewPage } from "@/components/overview/overview-page";
 
 export const Route = createFileRoute("/_auth/dashboard")({
-  component: RouteComponent,
+  validateSearch: z.object({ anoCalendario: z.number().int().optional() }),
+  component: OverviewPage,
 });
-
-function RouteComponent() {
-  const privateData = useQuery(api.privateData.get);
-  const user = useUser();
-
-  return (
-    <div>
-      <h1>Dashboard</h1>
-      <p>Welcome {user.user?.fullName}</p>
-      <p>privateData: {privateData?.message}</p>
-    </div>
-  );
-}
