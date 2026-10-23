@@ -1,4 +1,4 @@
-import { api } from "@my-better-t-app/backend/convex/_generated/api";
+import type { ObligationRow } from "@my-better-t-app/backend/convex/obligations";
 import { Badge } from "@my-better-t-app/ui/components/badge";
 import { Card } from "@my-better-t-app/ui/components/card";
 import {
@@ -9,23 +9,18 @@ import {
   ItemTitle,
 } from "@my-better-t-app/ui/components/item";
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
 import { CalendarCheck } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
-import Loader from "@/components/loader";
 import { formatDayMonth, formatMoney } from "@/lib/format";
 import { obligationLabel, obligationStatus } from "@/lib/obligation";
 
 export type ObligationListProps = {
+  obligations: ObligationRow[];
   anoCalendario: number;
 };
 
-export function ObligationList({ anoCalendario }: ObligationListProps) {
-  const obligations = useQuery(api.obligations.list, { anoCalendario });
-
-  if (obligations === undefined) return <Loader />;
-
+export function ObligationList({ anoCalendario, obligations }: ObligationListProps) {
   if (obligations.length === 0) {
     return (
       <EmptyState
