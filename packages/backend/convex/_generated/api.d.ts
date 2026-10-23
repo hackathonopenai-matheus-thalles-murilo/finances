@@ -8,11 +8,27 @@
  * @module
  */
 
+import type * as chatgpt from "../chatgpt.js";
+import type * as connectionSync from "../connectionSync.js";
+import type * as connections from "../connections.js";
+import type * as crons from "../crons.js";
+import type * as guides from "../guides.js";
 import type * as healthCheck from "../healthCheck.js";
+import type * as http from "../http.js";
+import type * as lib_connectionStatus from "../lib/connectionStatus.js";
+import type * as lib_env from "../lib/env.js";
 import type * as lib_identity from "../lib/identity.js";
+import type * as lib_pluggy from "../lib/pluggy.js";
+import type * as lib_profile from "../lib/profile.js";
+import type * as lib_sealed from "../lib/sealed.js";
+import type * as lib_taxAgentModel from "../lib/taxAgentModel.js";
+import type * as obligations from "../obligations.js";
+import type * as onboarding from "../onboarding.js";
 import type * as overview from "../overview.js";
 import type * as privateData from "../privateData.js";
+import type * as profile from "../profile.js";
 import type * as seed from "../seed.js";
+import type * as taxAgent from "../taxAgent.js";
 
 import type {
   ApiFromModules,
@@ -21,11 +37,27 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  chatgpt: typeof chatgpt;
+  connectionSync: typeof connectionSync;
+  connections: typeof connections;
+  crons: typeof crons;
+  guides: typeof guides;
   healthCheck: typeof healthCheck;
+  http: typeof http;
+  "lib/connectionStatus": typeof lib_connectionStatus;
+  "lib/env": typeof lib_env;
   "lib/identity": typeof lib_identity;
+  "lib/pluggy": typeof lib_pluggy;
+  "lib/profile": typeof lib_profile;
+  "lib/sealed": typeof lib_sealed;
+  "lib/taxAgentModel": typeof lib_taxAgentModel;
+  obligations: typeof obligations;
+  onboarding: typeof onboarding;
   overview: typeof overview;
   privateData: typeof privateData;
+  profile: typeof profile;
   seed: typeof seed;
+  taxAgent: typeof taxAgent;
 }>;
 
 /**
@@ -54,4 +86,6 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  agent: import("@convex-dev/agent/_generated/component.js").ComponentApi<"agent">;
+};

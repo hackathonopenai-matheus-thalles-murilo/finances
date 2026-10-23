@@ -3,9 +3,10 @@ import { v, type Infer } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { query, type QueryCtx } from "./_generated/server";
 import { requireUserId } from "./lib/identity";
+import { getProfile } from "./lib/profile";
 import { obligationKind } from "./schema";
 
-const obligationSummary = v.object({
+export const obligationSummary = v.object({
   kind: obligationKind,
   anoCalendario: v.number(),
   month: v.optional(v.number()),
@@ -36,6 +37,9 @@ const pendencia = v.union(
     institution: v.string(),
     status: v.union(v.literal("expiring"), v.literal("expired")),
     expiresOn: v.string(),
+  }),
+  v.object({
+    type: v.literal("onboarding"),
   }),
 );
 
@@ -75,6 +79,7 @@ export type DueObligation = Infer<typeof dueObligation>;
 export const get = query({
   args: { anoCalendario: v.number() },
   returns: v.object({
+    hasFiscalProfile: v.boolean(),
     pendencias: v.array(pendencia),
     scheduled: v.array(scheduledGuide),
     paid: v.array(paidGuide),
@@ -82,13 +87,17 @@ export const get = query({
   }),
   handler: async (ctx, { anoCalendario }) => {
     const userId = await requireUserId(ctx);
+    const profile = await getProfile(ctx, userId);
 
-    const pendencias = [
+    const pendencias: Pendencia[] = [
       ...(await approvalPendencias(ctx, userId)),
       ...(await foreignIncomePendencias(ctx, userId)),
       ...(await connectionPendencias(ctx, userId, "expired")),
       ...(await connectionPendencias(ctx, userId, "expiring")),
     ];
+    if (profile !== null && profile.onboardedAt === undefined) {
+      pendencias.push({ type: "onboarding" });
+    }
 
     const obligations = await ctx.db
       .query("obligations")
@@ -137,6 +146,7 @@ export const get = query({
     }
 
     return {
+      hasFiscalProfile: profile !== null,
       pendencias,
       scheduled,
       paid: paid.sort((a, b) => b.paidOn.localeCompare(a.paidOn)).slice(0, 3),
@@ -145,7 +155,7 @@ export const get = query({
   },
 });
 
-function summarize(obligation: Doc<"obligations">) {
+export function summarize(obligation: Doc<"obligations">) {
   return {
     kind: obligation.kind,
     anoCalendario: obligation.anoCalendario,
@@ -216,11 +226,18 @@ async function connectionPendencias(
     .withIndex("by_user_status", (q) => q.eq("userId", userId).eq("status", status))
     .collect();
 
-  return connections.map((connection) => ({
-    type: "connection",
-    connectionId: connection._id,
-    institution: connection.institution,
-    status,
-    expiresOn: connection.expiresOn,
-  }));
+  return connections.flatMap((connection): Pendencia[] => {
+    if (connection.status === "expiring" || connection.status === "expired") {
+      return [
+        {
+          type: "connection",
+          connectionId: connection._id,
+          institution: connection.institution,
+          status,
+          expiresOn: connection.expiresOn,
+        },
+      ];
+    }
+    return [];
+  });
 }

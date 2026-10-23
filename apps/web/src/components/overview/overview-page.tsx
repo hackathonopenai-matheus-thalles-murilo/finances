@@ -1,16 +1,16 @@
 import { useUser } from "@clerk/react";
 import { api } from "@my-better-t-app/backend/convex/_generated/api";
-import { getRouteApi } from "@tanstack/react-router";
+import { Navigate, getRouteApi } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 
 import Loader from "@/components/loader";
 import { currentAnoCalendario, greeting } from "@/lib/format";
+import { YearSelect } from "@/components/year-select";
 
 import { DueObligations } from "./due-obligations";
 import { PaidGuides } from "./paid-guides";
 import { Pendencias } from "./pendencias";
 import { ScheduledGuides } from "./scheduled-guides";
-import { YearSelect } from "./year-select";
 
 const route = getRouteApi("/_auth/dashboard");
 
@@ -27,7 +27,9 @@ export function OverviewPage() {
 
   if (overview === undefined) return <Loader />;
 
-  const { pendencias, scheduled, paid, dueSoon } = overview;
+  const { hasFiscalProfile, pendencias, scheduled, paid, dueSoon } = overview;
+
+  if (!hasFiscalProfile) return <Navigate to="/onboarding" replace />;
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-10 py-7">

@@ -7,6 +7,12 @@ export const overview = internalMutation({
   handler: async (ctx, { tokenIdentifier: userId }) => {
     await clearUser(ctx, userId);
 
+    await ctx.db.insert("fiscalProfiles", {
+      userId,
+      situations: ["foreignIncome", "company"],
+      onboardedAt: new Date("2026-09-01T10:00:00-03:00").getTime(),
+    });
+
     const carneLeaoSetembro = await ctx.db.insert("obligations", {
       userId,
       kind: "carneLeao",
@@ -107,6 +113,9 @@ export const overview = internalMutation({
     await ctx.db.insert("connections", {
       userId,
       institution: "Itaú",
+      situations: ["foreignIncome"],
+      externalId: "seed-itau",
+      sync: "synced",
       status: "expiring",
       expiresOn: "2026-10-29",
     });
@@ -115,6 +124,22 @@ export const overview = internalMutation({
 
 async function clearUser(ctx: MutationCtx, userId: string) {
   const rows = [
+    ...(await ctx.db
+      .query("fiscalProfiles")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect()),
+    ...(await ctx.db
+      .query("profileNotes")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect()),
+    ...(await ctx.db
+      .query("accounts")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect()),
+    ...(await ctx.db
+      .query("transactions")
+      .withIndex("by_user_postedAt", (q) => q.eq("userId", userId))
+      .collect()),
     ...(await ctx.db
       .query("connections")
       .withIndex("by_user_status", (q) => q.eq("userId", userId))

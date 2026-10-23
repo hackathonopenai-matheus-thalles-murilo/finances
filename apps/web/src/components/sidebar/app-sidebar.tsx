@@ -1,5 +1,4 @@
 import { UserButton } from "@clerk/react";
-import { Link } from "@tanstack/react-router";
 import {
   Building2,
   CalendarCheck,
@@ -11,7 +10,7 @@ import {
   UserRound,
 } from "lucide-react";
 
-import { NavPlaceholder } from "./nav-placeholder";
+import { NavLink } from "./nav-link";
 
 export function AppSidebar() {
   return (
@@ -22,23 +21,16 @@ export function AppSidebar() {
         </span>
         Finances
       </div>
-      <Link
-        to="/dashboard"
-        className="flex items-center gap-2.5 rounded-lg px-2.5 py-2"
-        activeProps={{ className: "bg-sidebar-accent text-sidebar-accent-foreground" }}
-      >
-        <LayoutDashboard className="size-4" />
-        Visão geral
-      </Link>
-      <NavPlaceholder icon={CalendarCheck} label="Obrigações" />
-      <NavPlaceholder icon={Sparkles} label="Agentes fiscais" />
-      <NavPlaceholder icon={FileText} label="Documentos" />
+      <NavLink to="/dashboard" icon={LayoutDashboard} label="Visão geral" />
+      <NavLink to="/obligations" icon={CalendarCheck} label="Obrigações" />
+      <NavLink to="/tax-agents" icon={Sparkles} label="Agentes fiscais" />
+      <NavLink to="/documents" icon={FileText} label="Documentos" />
       <p className="px-2.5 pt-4.5 pb-1.5 text-[11px] tracking-wider text-muted-foreground uppercase">
         Seus dados
       </p>
-      <NavPlaceholder icon={Landmark} label="Conexões" />
-      <NavPlaceholder icon={UserRound} label="Perfil fiscal" />
-      <NavPlaceholder icon={Building2} label="Empresas" />
+      <NavLink to="/connections" icon={Landmark} label="Conexões" />
+      <NavLink to="/fiscal-profile" icon={UserRound} label="Perfil fiscal" />
+      <NavLink to="/companies" icon={Building2} label="Empresas" />
       <div className="mt-auto px-1.5 py-2">
         <UserButton showName />
       </div>

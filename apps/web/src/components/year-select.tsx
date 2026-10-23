@@ -15,7 +15,7 @@ export type YearSelectProps = {
 };
 
 export function YearSelect({ anoCalendario }: YearSelectProps) {
-  const navigate = useNavigate({ from: "/dashboard" });
+  const navigate = useNavigate();
   const current = currentAnoCalendario();
   const items = [current, current - 1].map((year) => ({
     value: year,
@@ -28,7 +28,7 @@ export function YearSelect({ anoCalendario }: YearSelectProps) {
       value={anoCalendario}
       onValueChange={(year) => {
         if (year === null) return;
-        navigate({ search: { anoCalendario: year } });
+        navigate({ to: ".", search: { anoCalendario: year } });
       }}
     >
       <SelectTrigger>
