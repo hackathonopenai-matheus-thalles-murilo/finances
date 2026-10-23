@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Sparkles } from "lucide-react";
 
-import { EmptyState } from "@/components/empty-state";
 import { Page } from "@/components/page";
+import { ChatgptConnection } from "@/components/tax-agents/chatgpt-connection";
+import { ClearHistoryButton } from "@/components/tax-agents/clear-history-button";
+import { TaxAgentChat } from "@/components/tax-agents/tax-agent-chat";
 
 export const Route = createFileRoute("/_auth/tax-agents")({
   component: TaxAgentsPage,
@@ -13,12 +14,10 @@ function TaxAgentsPage() {
     <Page
       title="Agentes fiscais"
       description="Quem prepara, paga e entrega seus impostos, sempre com sua aprovação."
+      actions={<ClearHistoryButton />}
     >
-      <EmptyState
-        icon={Sparkles}
-        title="Em breve"
-        description="Aqui você vai acompanhar cada execução: o que foi preparado, quem aprovou e os comprovantes."
-      />
+      <ChatgptConnection />
+      <TaxAgentChat />
     </Page>
   );
 }

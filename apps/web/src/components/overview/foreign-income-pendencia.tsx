@@ -1,6 +1,9 @@
+import { api } from "@my-better-t-app/backend/convex/_generated/api";
 import type { Pendencia } from "@my-better-t-app/backend/convex/overview";
 import { Button } from "@my-better-t-app/ui/components/button";
+import { useMutation } from "convex/react";
 import { MessageCircleQuestion } from "lucide-react";
+import { useTransition } from "react";
 
 import { formatMoney, monthName } from "@/lib/format";
 
@@ -11,8 +14,16 @@ export type ForeignIncomePendenciaProps = {
 };
 
 export function ForeignIncomePendencia({ pendencia }: ForeignIncomePendenciaProps) {
-  const { institution, month, transactionCount, amountCents, currency } = pendencia;
+  const { questionId, institution, month, transactionCount, amountCents, currency } = pendencia;
   const isSingle = transactionCount === 1;
+  const answer = useMutation(api.foreignIncome.answer);
+  const [isPending, startTransition] = useTransition();
+
+  function handleAnswer(isIncome: boolean) {
+    startTransition(async () => {
+      await answer({ questionId, isIncome });
+    });
+  }
 
   return (
     <PendenciaItem
@@ -26,10 +37,19 @@ export function ForeignIncomePendencia({ pendencia }: ForeignIncomePendenciaProp
       }
       description={
         isSingle
-          ? `Entrou na sua conta ${institution} em ${monthName(month)}. É pagamento pelo seu trabalho?`
-          : `Entraram na sua conta ${institution} em ${monthName(month)}. São pagamentos pelo seu trabalho?`
+          ? `Entrou na sua conta ${institution} em ${monthName(month)}. É renda sua, como pagamento por trabalho?`
+          : `Entraram na sua conta ${institution} em ${monthName(month)}. São renda sua, como pagamento por trabalho?`
       }
-      actions={<Button variant="outline">Responder</Button>}
+      actions={
+        <>
+          <Button disabled={isPending} onClick={() => handleAnswer(true)}>
+            Sim, é renda
+          </Button>
+          <Button variant="outline" disabled={isPending} onClick={() => handleAnswer(false)}>
+            Não é renda
+          </Button>
+        </>
+      }
       aside={
         <>
           <p className="font-mono text-xl font-semibold whitespace-nowrap tabular-nums">

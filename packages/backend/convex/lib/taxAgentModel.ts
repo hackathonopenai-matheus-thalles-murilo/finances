@@ -38,7 +38,10 @@ export async function taxAgentModelFor(ctx: ActionCtx, userId: string) {
   if (account.status === "expired") return null;
 
   async function saveTokens(tokens: ChatGPTTokens) {
-    await ctx.runMutation(internal.chatgpt.saveTokens, { userId, tokens: await sealTokens(tokens) });
+    await ctx.runMutation(internal.chatgpt.saveTokens, {
+      userId,
+      tokens: await sealTokens(tokens),
+    });
   }
 
   const stored = chatgptTokens.parse(JSON.parse(await unseal(account.tokens)));

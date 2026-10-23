@@ -1,11 +1,11 @@
-﻿import { Badge } from "@my-better-t-app/ui/components/badge";
+import { Badge } from "@my-better-t-app/ui/components/badge";
 import { Button } from "@my-better-t-app/ui/components/button";
 import { Card } from "@my-better-t-app/ui/components/card";
 import type { ObligationRow } from "@my-better-t-app/backend/convex/obligations";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 
-import { obligationLabel } from "@/lib/obligation";
+import { obligationLabel, obligationStatus } from "@/lib/obligation";
 import { formatMoney, todayInSaoPaulo } from "@/lib/format";
 
 const monthFormatter = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" });
@@ -16,23 +16,14 @@ const weekdayFormatter = new Intl.DateTimeFormat("pt-BR", {
 });
 const weekdays = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
-const statusLabel: Record<ObligationRow["status"], string> = {
-  upcoming: "Em breve",
-  needsUser: "Precisa de você",
-  awaitingApproval: "Aguardando aprovação",
-  scheduled: "Agendado",
-  paid: "Pago",
-};
-
-const statusVariant: Record<
-  ObligationRow["status"],
-  "default" | "success" | "warning" | "secondary"
-> = {
-  upcoming: "secondary",
-  needsUser: "warning",
-  awaitingApproval: "default",
-  scheduled: "success",
-  paid: "success",
+const chipColor: Record<ObligationRow["status"], string> = {
+  upcoming: "border-muted-foreground/50 bg-muted text-muted-foreground",
+  preparing: "border-muted-foreground/50 bg-muted text-muted-foreground",
+  needsUser: "border-amber-700 bg-amber-50 text-amber-800",
+  doneByUser: "border-emerald-700 bg-emerald-50 text-emerald-800",
+  awaitingApproval: "border-primary bg-primary/10 text-primary",
+  scheduled: "border-emerald-700 bg-emerald-50 text-emerald-800",
+  paid: "border-emerald-700 bg-emerald-50 text-emerald-800",
 };
 
 function dateKey(date: Date) {
@@ -174,7 +165,7 @@ export function ObligationCalendar({ obligations }: ObligationCalendarProps) {
                     {items.slice(0, 2).map((item) => (
                       <span
                         key={item.obligationId}
-                        className={`truncate rounded-sm border-l-2 px-1 py-0.5 text-[10px] leading-tight ${item.status === "paid" || item.status === "scheduled" ? "border-emerald-700 bg-emerald-50 text-emerald-800" : item.status === "needsUser" ? "border-amber-700 bg-amber-50 text-amber-800" : item.status === "awaitingApproval" ? "border-primary bg-primary/10 text-primary" : "border-muted-foreground/50 bg-muted text-muted-foreground"}`}
+                        className={`truncate rounded-sm border-l-2 px-1 py-0.5 text-[10px] leading-tight ${chipColor[item.status]}`}
                       >
                         {obligationLabel(item.obligation)}
                       </span>
@@ -203,7 +194,9 @@ export function ObligationCalendar({ obligations }: ObligationCalendarProps) {
                   <div className="border-t py-3 first:mt-3" key={item.obligationId}>
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-sm font-semibold">{obligationLabel(item.obligation)}</p>
-                      <Badge variant={statusVariant[item.status]}>{statusLabel[item.status]}</Badge>
+                      <Badge variant={obligationStatus[item.status].variant}>
+                        {obligationStatus[item.status].label}
+                      </Badge>
                     </div>
                     {item.amountCentavos !== undefined && (
                       <p className="mt-2 font-mono text-xs tabular-nums">
@@ -240,7 +233,7 @@ export function ObligationCalendar({ obligations }: ObligationCalendarProps) {
                       <span className="text-sm font-semibold">
                         {obligationLabel(item.obligation)}
                       </span>
-                      <Badge variant={statusVariant[item.status]}>
+                      <Badge variant={obligationStatus[item.status].variant}>
                         {new Intl.DateTimeFormat("pt-BR", {
                           day: "2-digit",
                           month: "short",
@@ -249,7 +242,7 @@ export function ObligationCalendar({ obligations }: ObligationCalendarProps) {
                       </Badge>
                     </span>
                     <span className="mt-1 block text-xs text-muted-foreground">
-                      {statusLabel[item.status]}
+                      {obligationStatus[item.status].label}
                     </span>
                   </button>
                 ))

@@ -8,43 +8,24 @@ import {
   ItemDescription,
   ItemTitle,
 } from "@my-better-t-app/ui/components/item";
-import { CalendarCheck } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
-import { EmptyState } from "@/components/empty-state";
 import { formatDayMonth, formatMoney } from "@/lib/format";
-import { obligationLabel } from "@/lib/obligation";
-
-const obligationStatus: Record<
-  ObligationRow["status"],
-  { label: string; variant: "default" | "success" | "warning" | "secondary" }
-> = {
-  upcoming: { label: "Em breve", variant: "secondary" },
-  needsUser: { label: "Precisa de você", variant: "warning" },
-  awaitingApproval: { label: "Aguardando aprovação", variant: "default" },
-  scheduled: { label: "Agendado", variant: "success" },
-  paid: { label: "Pago", variant: "success" },
-};
+import { obligationLabel, obligationStatus } from "@/lib/obligation";
 
 export type ObligationListProps = {
   obligations: ObligationRow[];
-  anoCalendario: number;
 };
 
-export function ObligationList({ anoCalendario, obligations }: ObligationListProps) {
-  if (obligations.length === 0) {
-    return (
-      <EmptyState
-        icon={CalendarCheck}
-        title="Nenhuma obrigação"
-        description={`Não encontramos obrigações no ano-calendário ${anoCalendario}.`}
-      />
-    );
-  }
-
+export function ObligationList({ obligations }: ObligationListProps) {
   return (
     <Card size="flush">
       {obligations.map(({ obligationId, obligation, dueOn, amountCentavos, status }) => (
-        <Item key={obligationId} size="sm">
+        <Item
+          key={obligationId}
+          size="sm"
+          render={<Link to="/obligations/$obligationId" params={{ obligationId }} />}
+        >
           <ItemContent>
             <ItemTitle>{obligationLabel(obligation)}</ItemTitle>
             <ItemDescription>

@@ -1,3 +1,4 @@
+import workflowTest from "@convex-dev/workflow/test";
 import { convexTest } from "convex-test";
 import { describe, expect, test } from "vitest";
 
@@ -9,6 +10,7 @@ const anoCalendario = 2026;
 
 function setup() {
   const t = convexTest(schema, modules);
+  workflowTest.register(t);
   return t.withIdentity({ tokenIdentifier: "synthetic|user-bruno" });
 }
 

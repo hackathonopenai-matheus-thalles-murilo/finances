@@ -23,6 +23,7 @@ function insertConnection(
     ctx.db.insert("connections", {
       userId,
       externalId: `synthetic-item-${institution}`,
+      institutionId: `synthetic-${institution}`,
       institution,
       situations,
       sync: "synced",
@@ -102,6 +103,7 @@ describe("connections", () => {
       ctx.db.insert("connections", {
         userId: "synthetic|user-intruder",
         externalId: "synthetic-item-intruder",
+        institutionId: "synthetic-intruder",
         institution: "Bradesco",
         situations: ["salary"],
         sync: "synced",

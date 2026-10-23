@@ -1,6 +1,11 @@
 import { z } from "zod";
 
 import { requireEnv } from "./env";
+import {
+  isSandboxForeignAccount,
+  sandboxForeignAccount,
+  sandboxForeignTransactions,
+} from "./pluggySandbox";
 
 const BASE_URL = "https://api.pluggy.ai";
 
@@ -8,7 +13,9 @@ export type SyncStatus = "syncing" | "synced" | "failed";
 
 export type BankItem = {
   clientUserId: string | null;
+  institutionId: string;
   institution: string;
+  isSandbox: boolean;
   sync: SyncStatus;
   isRevoked: boolean;
   expiresAt: string | null;
@@ -39,7 +46,7 @@ const itemSchema = z.object({
   clientUserId: z.string().nullable(),
   status: z.enum(["UPDATED", "UPDATING", "LOGIN_ERROR", "OUTDATED", "WAITING_USER_INPUT"]),
   executionStatus: z.string(),
-  connector: z.object({ name: z.string() }),
+  connector: z.object({ id: z.number(), name: z.string(), isSandbox: z.boolean() }),
 });
 
 const consentSchema = z.object({
@@ -148,7 +155,9 @@ export class Pluggy {
 
     return {
       clientUserId: item.clientUserId,
+      institutionId: String(item.connector.id),
       institution: item.connector.name,
+      isSandbox: item.connector.isSandbox,
       sync: itemSync[item.status],
       isRevoked:
         item.executionStatus === "USER_AUTHORIZATION_REVOKED" ||
@@ -163,19 +172,24 @@ export class Pluggy {
     await this.json(response);
   }
 
-  async listAccounts(itemId: string): Promise<BankAccount[]> {
+  async listAccounts(itemId: string, isSandbox: boolean): Promise<BankAccount[]> {
     const { results } = accountsSchema.parse(
       await this.request(`/accounts?itemId=${itemId}`, { method: "GET" }),
     );
-    return results.map((account) => ({
+    const accounts: BankAccount[] = results.map((account) => ({
       externalId: account.id,
       name: account.marketingName ?? account.name,
       type: account.type === "CREDIT" ? "credit" : "bank",
       currency: account.currencyCode,
     }));
+    if (!isSandbox) return accounts;
+    return [...accounts, sandboxForeignAccount(itemId)];
   }
 
   async listTransactions(accountId: string, cursor: string | null) {
+    if (isSandboxForeignAccount(accountId)) {
+      return { transactions: sandboxForeignTransactions(accountId, Date.now()), cursor: null };
+    }
     const path = cursor ?? `?accountId=${accountId}`;
     const { results, next } = transactionsPageSchema.parse(
       await this.request(`/v2/transactions${path}`, { method: "GET" }),

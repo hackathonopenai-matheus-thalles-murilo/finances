@@ -1,6 +1,5 @@
 import { api } from "@my-better-t-app/backend/convex/_generated/api";
 import type { GuideRow } from "@my-better-t-app/backend/convex/guides";
-import type { ObligationSummary } from "@my-better-t-app/backend/convex/overview";
 import { Badge } from "@my-better-t-app/ui/components/badge";
 import { Card } from "@my-better-t-app/ui/components/card";
 import {
@@ -16,13 +15,7 @@ import { FileText } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import Loader from "@/components/loader";
 import { formatDayMonth, formatMoney, formatTimestampDayMonth } from "@/lib/format";
-import { obligationLabel } from "@/lib/obligation";
-
-const guideType: Record<ObligationSummary["kind"], string> = {
-  carneLeao: "DARF",
-  dasMei: "DAS",
-  dirpf: "DARF",
-};
+import { guideType, obligationLabel } from "@/lib/obligation";
 
 const guideStatus: Record<GuideRow["status"], { label: string; variant: "default" | "success" }> = {
   awaitingApproval: { label: "Aguardando aprovação", variant: "default" },
