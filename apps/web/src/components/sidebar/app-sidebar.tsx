@@ -19,7 +19,7 @@ export function AppSidebar() {
         <span className="grid size-6.5 place-items-center rounded-md bg-foreground text-background">
           <ReceiptText className="size-4" />
         </span>
-        Finances
+        Finora
       </div>
       <NavLink to="/dashboard" icon={LayoutDashboard} label="Visão geral" />
       <NavLink to="/obligations" icon={CalendarCheck} label="Obrigações" />
