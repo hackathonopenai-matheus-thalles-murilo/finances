@@ -32,6 +32,7 @@ import type * as privateData from "../privateData.js";
 import type * as profile from "../profile.js";
 import type * as seed from "../seed.js";
 import type * as taxAgent from "../taxAgent.js";
+import type * as whatsapp from "../whatsapp.js";
 
 import type {
   ApiFromModules,
@@ -64,6 +65,7 @@ declare const fullApi: ApiFromModules<{
   profile: typeof profile;
   seed: typeof seed;
   taxAgent: typeof taxAgent;
+  whatsapp: typeof whatsapp;
 }>;
 
 /**
